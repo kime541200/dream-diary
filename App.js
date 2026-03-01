@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, KeyboardAvoidingView, Platform, Modal, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, KeyboardAvoidingView, Platform, Modal, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { registerRootComponent } from 'expo';
 import { theme } from './src/styles/theme';
 import { useDreams } from './src/hooks/useDreams';
@@ -14,12 +14,19 @@ function App() {
   const [text, setText] = useState('');
   const [isSettingVisible, setSettingVisible] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const [config, setConfig] = useState({ apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' });
+  const [config, setConfig] = useState({ 
+    apiKey: '', 
+    baseUrl: 'https://api.openai.com/v1', 
+    model: 'gpt-4o-mini',
+    temperature: '0.7',
+    top_p: '1',
+    max_tokens: '1000'
+  });
 
   useEffect(() => {
     const initConfig = async () => {
       const saved = await loadConfig();
-      if (saved) setConfig(saved);
+      if (saved) setConfig({ ...config, ...saved });
     };
     initConfig();
   }, []);
@@ -46,10 +53,12 @@ function App() {
     setIsLoading(true);
     try {
       const result = await fetchAIVisual(text, config);
+      if (!result.analysis) throw new Error('AI 解析無效');
       await addDream(text, result.analysis, JSON.stringify(result));
       setText('');
     } catch (err) {
-      Alert.alert('封存失敗', err.message);
+      console.error('封存出錯:', err);
+      Alert.alert('封存失敗', err.message || '請檢查 API 設定與網路連線');
     } finally {
       setIsLoading(false);
     }
@@ -85,17 +94,44 @@ function App() {
         </TouchableOpacity>
       </View>
 
-      <Modal visible={isSettingVisible} transparent animationType='fade'>
+      <Modal visible={isSettingVisible} transparent animationType='slide'>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>🛡️ 安全加密設定</Text>
-            <TextInput style={styles.modalInput} value={config.apiKey} onChangeText={(v) => setConfig({ ...config, apiKey: v })} secureTextEntry placeholder='OpenAI API Key' placeholderTextColor={theme.colors.subtext} />
-            <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.accent, marginBottom: 10 }]} onPress={handleTestConnection} disabled={isValidating}>
-              {isValidating ? <ActivityIndicator color={theme.colors.primary} /> : <Text style={[styles.buttonText, { color: theme.colors.primary }]}>測試連線</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleSaveConfig}>
-              <Text style={styles.buttonText}>加密儲存並返回</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>🛡️ 進階配置與加密設定</Text>
+            
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.label}>API Key (必填)</Text>
+              <TextInput style={styles.modalInput} value={config.apiKey} onChangeText={(v) => setConfig({ ...config, apiKey: v })} secureTextEntry placeholder='sk-...' placeholderTextColor={theme.colors.subtext} />
+              
+              <Text style={styles.label}>Base URL</Text>
+              <TextInput style={styles.modalInput} value={config.baseUrl} onChangeText={(v) => setConfig({ ...config, baseUrl: v })} placeholder='https://api.openai.com/v1' placeholderTextColor={theme.colors.subtext} />
+              
+              <Text style={styles.label}>模型名稱</Text>
+              <TextInput style={styles.modalInput} value={config.model} onChangeText={(v) => setConfig({ ...config, model: v })} placeholder='gpt-4o-mini' placeholderTextColor={theme.colors.subtext} />
+              
+              <View style={styles.row}>
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text style={styles.label}>溫度 (0.0-2.0)</Text>
+                  <TextInput style={styles.modalInput} value={config.temperature} onChangeText={(v) => setConfig({ ...config, temperature: v })} keyboardType='numeric' placeholder='0.7' />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Top P (0.0-1.0)</Text>
+                  <TextInput style={styles.modalInput} value={config.top_p} onChangeText={(v) => setConfig({ ...config, top_p: v })} keyboardType='numeric' placeholder='1.0' />
+                </View>
+              </View>
+
+              <Text style={styles.label}>最大生成的 Token 數</Text>
+              <TextInput style={styles.modalInput} value={config.max_tokens} onChangeText={(v) => setConfig({ ...config, max_tokens: v })} keyboardType='numeric' placeholder='1000' />
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.accent, marginBottom: 10 }]} onPress={handleTestConnection} disabled={isValidating}>
+                {isValidating ? <ActivityIndicator color={theme.colors.primary} /> : <Text style={[styles.buttonText, { color: theme.colors.primary }]}>測試連線</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button} onPress={handleSaveConfig}>
+                <Text style={styles.buttonText}>儲存並返回</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -116,9 +152,13 @@ const styles = StyleSheet.create({
   button: { backgroundColor: theme.colors.primary, padding: 18, borderRadius: 35, alignItems: 'center' },
   buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.95)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '85%', backgroundColor: theme.colors.card, padding: 30, borderRadius: 30, borderWidth: 1, borderColor: theme.colors.border },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 25, color: theme.colors.text, textAlign: 'center' },
-  modalInput: { backgroundColor: theme.colors.accent, padding: 15, borderRadius: 15, marginBottom: 20, color: theme.colors.text }
+  modalContent: { width: '90%', maxHeight: '80%', backgroundColor: theme.colors.card, padding: 25, borderRadius: 30, borderWidth: 1, borderColor: theme.colors.border },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: theme.colors.text, textAlign: 'center' },
+  modalScroll: { marginBottom: 20 },
+  label: { fontSize: 13, color: theme.colors.subtext, marginBottom: 8, marginLeft: 5 },
+  modalInput: { backgroundColor: theme.colors.accent, padding: 12, borderRadius: 12, marginBottom: 15, color: theme.colors.text },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  modalFooter: { marginTop: 10 }
 });
 
 registerRootComponent(App);

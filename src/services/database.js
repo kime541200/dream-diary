@@ -2,7 +2,20 @@ import * as SQLite from 'expo-sqlite';
 const db = SQLite.openDatabaseSync('dreams.db');
 
 export const initDB = () => {
-  db.execSync('CREATE TABLE IF NOT EXISTS dreams (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT, analysis TEXT, visualData TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);');
+  // 建立基礎表結構
+  db.execSync('CREATE TABLE IF NOT EXISTS dreams (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT, analysis TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);');
+  
+  // 檢查並補齊缺失的 visualData 欄位 (處理舊版本資料表)
+  try {
+    const tableInfo = db.getAllSync('PRAGMA table_info(dreams);');
+    const hasVisualData = tableInfo.some(column => column.name === 'visualData');
+    if (!hasVisualData) {
+      db.execSync('ALTER TABLE dreams ADD COLUMN visualData TEXT;');
+      console.log('成功修復資料庫：已補齊 visualData 欄位');
+    }
+  } catch (e) {
+    console.warn('資料庫檢查跳過：', e.message);
+  }
 };
 
 export const getDreams = () => {
