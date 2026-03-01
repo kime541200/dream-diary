@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initDB, getDreams, saveDreamRecord, deleteDreamRecord } from '../services/database';
+import { initDB, getDreams, saveDreamRecord, deleteDreamRecord, getTagCloudData } from '../services/database';
 
 export const useDreams = () => {
   const [dreams, setDreams] = useState([]);
+  const [stats, setStats] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const refresh = useCallback(() => {
     const data = getDreams();
+    const tagStats = getTagCloudData();
     setDreams(data);
+    setStats(tagStats);
   }, []);
 
   useEffect(() => {
@@ -25,5 +28,5 @@ export const useDreams = () => {
     refresh();
   };
 
-  return { dreams, isLoading, setIsLoading, addDream, removeDream };
+  return { dreams, stats, isLoading, setIsLoading, addDream, removeDream, refresh };
 };
