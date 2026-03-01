@@ -8,8 +8,8 @@ const BreathingSphere = ({ moodColor, gyroData }) => {
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     // 結合時間與陀螺儀數據實現視差旋轉
-    mesh.current.rotation.x = Math.sin(t / 4) + (gyroData.beta * 0.5 || 0);
-    mesh.current.rotation.y = Math.sin(t / 2) + (gyroData.gamma * 0.5 || 0);
+    mesh.current.rotation.x = Math.sin(t * rotationFactor / 4) + (gyroData.beta * 0.5 || 0);
+    mesh.current.rotation.y = Math.sin(t * rotationFactor / 2) + (gyroData.gamma * 0.5 || 0);
     const scale = 1 + Math.sin(t * 1.5) * 0.1;
     mesh.current.scale.set(scale, scale, scale);
   });
