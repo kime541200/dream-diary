@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
-import Svg, { Path, Defs, RadialGradient, Stop, G } from 'react-native-svg';
+import Svg, { Path, Defs, RadialGradient, Stop, G, Filter, FeGaussianBlur } from 'react-native-svg';
 
 export const VisualToken = ({ path, moodColor = '#7C3AED', turbulence = 0.5, size = 70 }) => {
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -9,8 +9,8 @@ export const VisualToken = ({ path, moodColor = '#7C3AED', turbulence = 0.5, siz
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 3000 / turbulence, easing: Easing.inOut(Easing.sine), useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: 3000 / turbulence, easing: Easing.inOut(Easing.sine), useNativeDriver: true })
+        Animated.timing(pulseAnim, { toValue: 1, duration: 3000 / turbulence, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 3000 / turbulence, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
       ])
     );
     const rotate = Animated.loop(
@@ -36,9 +36,12 @@ export const VisualToken = ({ path, moodColor = '#7C3AED', turbulence = 0.5, siz
             <Stop offset='0%' stopColor={moodColor} stopOpacity='1' />
             <Stop offset='100%' stopColor={moodColor} stopOpacity='0' />
           </RadialGradient>
+          <Filter id='blurFilter'>
+            <FeGaussianBlur stdDeviation='2' />
+          </Filter>
         </Defs>
         <G>
-          <Path d={finalPath} fill='url(#glow)' filter='blur(2px)' />
+          <Path d={finalPath} fill='url(#glow)' filter='url(#blurFilter)' />
           <Path d={finalPath} fill='none' stroke={moodColor} strokeWidth='2' strokeLinecap='round' opacity='0.8' />
         </G>
       </Svg>
