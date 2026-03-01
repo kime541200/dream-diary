@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, KeyboardAvoidingView, Platform, Modal, ActivityIndicator, Alert } from 'react-native';
 import { registerRootComponent } from 'expo';
 import { theme } from './src/styles/theme';
 import { useDreams } from './src/hooks/useDreams';
 import { fetchAIVisual } from './src/services/aiService';
 import { DreamCard } from './src/components/DreamCard';
+import { saveConfig, loadConfig } from './src/services/secureStorage';
 
 function App() {
   const { dreams, isLoading, setIsLoading, addDream, removeDream } = useDreams();
@@ -12,7 +13,20 @@ function App() {
   const [isSettingVisible, setSettingVisible] = useState(false);
   const [config, setConfig] = useState({ apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' });
 
-  const handleSave = async () => {
+  useEffect(() => {
+    const initConfig = async () => {
+      const saved = await loadConfig();
+      if (saved) setConfig(saved);
+    };
+    initConfig();
+  }, []);
+
+  const handleSaveConfig = async () => {
+    await saveConfig(config);
+    setSettingVisible(false);
+  };
+
+  const handleSaveDream = async () => {
     if (!text.trim()) return;
     setIsLoading(true);
     try {
@@ -43,17 +57,17 @@ function App() {
       />
       <View style={styles.inputArea}>
         <TextInput style={styles.input} placeholder='昨晚，你夢見了什麼？' placeholderTextColor={theme.colors.subtext} value={text} onChangeText={setText} multiline />
-        <TouchableOpacity style={styles.button} onPress={handleSave} disabled={isLoading}>
+        <TouchableOpacity style={styles.button} onPress={handleSaveDream} disabled={isLoading}>
           {isLoading ? <ActivityIndicator color='#FFF' /> : <Text style={styles.buttonText}>封存夢境</Text>}
         </TouchableOpacity>
       </View>
       <Modal visible={isSettingVisible} transparent animationType='fade'>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>AI 高階設定</Text>
-            <TextInput style={styles.modalInput} value={config.apiKey} onChangeText={(v) => setConfig({ ...config, apiKey: v })} secureTextEntry placeholder='API Key' />
-            <TouchableOpacity style={styles.button} onPress={() => setSettingVisible(false)}>
-              <Text style={styles.buttonText}>儲存並返回</Text>
+            <Text style={styles.modalTitle}>🛡️ 安全加密設定</Text>
+            <TextInput style={styles.modalInput} value={config.apiKey} onChangeText={(v) => setConfig({ ...config, apiKey: v })} secureTextEntry placeholder='OpenAI API Key' placeholderTextColor={theme.colors.subtext} />
+            <TouchableOpacity style={styles.button} onPress={handleSaveConfig}>
+              <Text style={styles.buttonText}>加密儲存並返回</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -69,12 +83,12 @@ const styles = StyleSheet.create({
   settingBtn: { position: 'absolute', right: 20, top: 60 },
   settingText: { fontSize: 24 },
   list: { flex: 1, paddingHorizontal: theme.spacing.padding },
-  inputArea: { padding: 25, backgroundColor: theme.colors.card, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  inputArea: { padding: 25, backgroundColor: theme.colors.card, borderTopLeftRadius: 30, borderTopRightRadius: 30, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 20 },
   input: { minHeight: 100, padding: 18, backgroundColor: theme.colors.accent, borderRadius: 20, marginBottom: 15, color: theme.colors.text, fontSize: 16 },
-  button: { backgroundColor: theme.colors.primary, padding: 18, borderRadius: 35, alignItems: 'center', shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
+  button: { backgroundColor: theme.colors.primary, padding: 18, borderRadius: 35, alignItems: 'center', shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 20 },
   buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.9)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '85%', backgroundColor: theme.colors.card, padding: 30, borderRadius: 30, borderSize: 1, borderColor: theme.colors.border },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.95)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '85%', backgroundColor: theme.colors.card, padding: 30, borderRadius: 30, borderWidth: 1, borderColor: theme.colors.border },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 25, color: theme.colors.text, textAlign: 'center' },
   modalInput: { backgroundColor: theme.colors.accent, padding: 15, borderRadius: 15, marginBottom: 20, color: theme.colors.text }
 });
