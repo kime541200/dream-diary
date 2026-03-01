@@ -6,6 +6,7 @@ import { useDreams } from './src/hooks/useDreams';
 import { fetchAIVisual, validateConnection } from './src/services/aiService';
 import { DreamCard } from './src/components/DreamCard';
 import { StatsPanel } from './src/components/StatsPanel';
+import { WeeklyInsightPanel } from './src/components/WeeklyInsightPanel';
 import { saveConfig, loadConfig } from './src/services/secureStorage';
 
 function App() {
@@ -66,7 +67,12 @@ function App() {
       <FlatList
         data={dreams}
         keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={<StatsPanel stats={stats} />}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <WeeklyInsightPanel />
+            <StatsPanel stats={stats} />
+          </View>
+        }
         renderItem={({ item }) => <DreamCard item={item} onDelete={removeDream} />}
         style={styles.list}
         contentContainerStyle={{ paddingBottom: 20 }}
@@ -103,6 +109,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: theme.colors.text, letterSpacing: 2 },
   settingBtn: { position: 'absolute', right: 20, top: 60 },
   settingText: { fontSize: 24 },
+  listHeader: { paddingHorizontal: 0 },
   list: { flex: 1, paddingHorizontal: theme.spacing.padding },
   inputArea: { padding: 25, backgroundColor: theme.colors.card, borderTopLeftRadius: 30, borderTopRightRadius: 30, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 20 },
   input: { minHeight: 80, padding: 18, backgroundColor: theme.colors.accent, borderRadius: 20, marginBottom: 15, color: theme.colors.text, fontSize: 16 },
