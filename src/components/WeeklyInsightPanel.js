@@ -28,6 +28,9 @@ export const WeeklyInsightPanel = () => {
   const togglePersona = () => {
     const next = persona === 'psychoanalyst' ? 'cyberpunk' : persona === 'cyberpunk' ? 'zen' : 'psychoanalyst';
     setPersona(next);
+    if (next === "psychoanalyst") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    else if (next === "cyberpunk") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     fetchSummary(next);
   };
 
