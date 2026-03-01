@@ -5,10 +5,11 @@ import { theme } from './src/styles/theme';
 import { useDreams } from './src/hooks/useDreams';
 import { fetchAIVisual } from './src/services/aiService';
 import { DreamCard } from './src/components/DreamCard';
+import { StatsPanel } from './src/components/StatsPanel';
 import { saveConfig, loadConfig } from './src/services/secureStorage';
 
 function App() {
-  const { dreams, isLoading, setIsLoading, addDream, removeDream } = useDreams();
+  const { dreams, stats, isLoading, setIsLoading, addDream, removeDream } = useDreams();
   const [text, setText] = useState('');
   const [isSettingVisible, setSettingVisible] = useState(false);
   const [config, setConfig] = useState({ apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' });
@@ -48,19 +49,23 @@ function App() {
           <Text style={styles.settingText}>⚙️</Text>
         </TouchableOpacity>
       </View>
+      
       <FlatList
         data={dreams}
         keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={<StatsPanel stats={stats} />}
         renderItem={({ item }) => <DreamCard item={item} onDelete={removeDream} />}
         style={styles.list}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
+
       <View style={styles.inputArea}>
         <TextInput style={styles.input} placeholder='昨晚，你夢見了什麼？' placeholderTextColor={theme.colors.subtext} value={text} onChangeText={setText} multiline />
         <TouchableOpacity style={styles.button} onPress={handleSaveDream} disabled={isLoading}>
           {isLoading ? <ActivityIndicator color='#FFF' /> : <Text style={styles.buttonText}>封存夢境</Text>}
         </TouchableOpacity>
       </View>
+
       <Modal visible={isSettingVisible} transparent animationType='fade'>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -78,14 +83,14 @@ function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { paddingTop: 60, paddingBottom: 20, alignItems: 'center' },
+  header: { paddingTop: 60, paddingBottom: 10, alignItems: 'center' },
   title: { fontSize: 24, fontWeight: 'bold', color: theme.colors.text, letterSpacing: 2 },
   settingBtn: { position: 'absolute', right: 20, top: 60 },
   settingText: { fontSize: 24 },
   list: { flex: 1, paddingHorizontal: theme.spacing.padding },
   inputArea: { padding: 25, backgroundColor: theme.colors.card, borderTopLeftRadius: 30, borderTopRightRadius: 30, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 20 },
-  input: { minHeight: 100, padding: 18, backgroundColor: theme.colors.accent, borderRadius: 20, marginBottom: 15, color: theme.colors.text, fontSize: 16 },
-  button: { backgroundColor: theme.colors.primary, padding: 18, borderRadius: 35, alignItems: 'center', shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 20 },
+  input: { minHeight: 80, padding: 18, backgroundColor: theme.colors.accent, borderRadius: 20, marginBottom: 15, color: theme.colors.text, fontSize: 16 },
+  button: { backgroundColor: theme.colors.primary, padding: 18, borderRadius: 35, alignItems: 'center' },
   buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.95)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '85%', backgroundColor: theme.colors.card, padding: 30, borderRadius: 30, borderWidth: 1, borderColor: theme.colors.border },
