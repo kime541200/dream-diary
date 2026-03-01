@@ -3,7 +3,7 @@ import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Keyboard
 import { registerRootComponent } from 'expo';
 import { theme } from './src/styles/theme';
 import { useDreams } from './src/hooks/useDreams';
-import { fetchAIVisual } from './src/services/aiService';
+import { fetchAIVisual, validateConnection } from './src/services/aiService';
 import { DreamCard } from './src/components/DreamCard';
 import { StatsPanel } from './src/components/StatsPanel';
 import { saveConfig, loadConfig } from './src/services/secureStorage';
@@ -12,6 +12,7 @@ function App() {
   const { dreams, stats, isLoading, setIsLoading, addDream, removeDream } = useDreams();
   const [text, setText] = useState('');
   const [isSettingVisible, setSettingVisible] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [config, setConfig] = useState({ apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' });
 
   useEffect(() => {
@@ -21,6 +22,18 @@ function App() {
     };
     initConfig();
   }, []);
+
+  const handleTestConnection = async () => {
+    setIsValidating(true);
+    try {
+      await validateConnection(config);
+      Alert.alert('連線成功', '您的 AI 密鑰配置正確！');
+    } catch (err) {
+      Alert.alert('連線失敗', err.message);
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   const handleSaveConfig = async () => {
     await saveConfig(config);
@@ -71,6 +84,9 @@ function App() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>🛡️ 安全加密設定</Text>
             <TextInput style={styles.modalInput} value={config.apiKey} onChangeText={(v) => setConfig({ ...config, apiKey: v })} secureTextEntry placeholder='OpenAI API Key' placeholderTextColor={theme.colors.subtext} />
+            <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.accent, marginBottom: 10 }]} onPress={handleTestConnection} disabled={isValidating}>
+              {isValidating ? <ActivityIndicator color={theme.colors.primary} /> : <Text style={[styles.buttonText, { color: theme.colors.primary }]}>測試連線</Text>}
+            </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={handleSaveConfig}>
               <Text style={styles.buttonText}>加密儲存並返回</Text>
             </TouchableOpacity>
