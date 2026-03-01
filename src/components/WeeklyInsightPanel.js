@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { theme } from '../styles/theme';
 import { generateWeeklyInsight } from '../services/weeklyReportService';
 import { fetchWeeklySummary } from '../services/aiService';
@@ -9,21 +9,27 @@ import { DreamAtmosphere } from './DreamAtmosphere';
 export const WeeklyInsightPanel = () => {
   const [summary, setSummary] = useState('');
   const [isAnalysing, setIsAnalysing] = useState(false);
+  const [persona, setPersona] = useState('psychoanalyst');
   const insight = generateWeeklyInsight();
-  
-  useEffect(() => {
-    const getSummary = async () => {
-      if (insight.dreamCount > 0) {
-        setIsAnalysing(true);
-        const config = await loadConfig();
-        const dreams = require('../services/database').getDreams();
-        const text = await fetchWeeklySummary(dreams.slice(0, 10), config);
-        setSummary(text);
-        setIsAnalysing(false);
-      }
-    };
-    getSummary();
-  }, [insight.dreamCount]);
+
+  const fetchSummary = async (p) => {
+    if (insight.dreamCount > 0) {
+      setIsAnalysing(true);
+      const config = await loadConfig();
+      const dreams = require('../services/database').getDreams();
+      const text = await fetchWeeklySummary(dreams.slice(0, 10), config, p);
+      setSummary(text);
+      setIsAnalysing(false);
+    }
+  };
+
+  useEffect(() => { fetchSummary(persona); }, [insight.dreamCount]);
+
+  const togglePersona = () => {
+    const next = persona === 'psychoanalyst' ? 'cyberpunk' : persona === 'cyberpunk' ? 'zen' : 'psychoanalyst';
+    setPersona(next);
+    fetchSummary(next);
+  };
 
   if (insight.dreamCount === 0) return null;
   const moodColor = insight.averageMoodScore > 0 ? '#10B981' : '#F59E0B';
@@ -38,21 +44,23 @@ export const WeeklyInsightPanel = () => {
         <View style={styles.statBox}><Text style={styles.statLabel}>封存</Text><Text style={styles.statValue}>{insight.dreamCount}</Text></View>
         <View style={styles.statBox}><Text style={styles.statLabel}>指數</Text><Text style={[styles.statValue, { color: moodColor }]}>{insight.averageMoodScore.toFixed(1)}</Text></View>
       </View>
-      <View style={styles.summaryBox}>
-        {isAnalysing ? <ActivityIndicator color={theme.colors.primary} /> : <Text style={styles.summaryText}>{summary || '正在解讀潛意識...'}</Text>}
-      </View>
+      <TouchableOpacity onPress={togglePersona} style={styles.summaryBox}>
+        <Text style={styles.personaTag}>切換解讀視角: {persona.toUpperCase()}</Text>
+        {isAnalysing ? <ActivityIndicator size='small' color={theme.colors.primary} /> : <Text style={styles.summaryText}>{summary || '正在解讀潛意識...'}</Text>}
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { padding: 25, backgroundColor: theme.colors.card, borderRadius: 30, marginBottom: 20, borderWidth: 1, borderColor: theme.colors.border, overflow: 'hidden' },
-  atmosphereWrapper: { position: 'absolute', top: -30, right: -30, width: 200, height: 200, opacity: 0.5 },
+  atmosphereWrapper: { position: 'absolute', top: -30, right: -30, width: 220, height: 220, opacity: 0.5 },
   title: { fontSize: 16, fontWeight: 'bold', color: theme.colors.text, marginBottom: 15, zIndex: 2 },
   statsRow: { flexDirection: 'row', marginBottom: 20, zIndex: 2 },
   statBox: { marginRight: 30 },
   statLabel: { fontSize: 11, color: theme.colors.subtext },
   statValue: { fontSize: 24, fontWeight: '800', color: theme.colors.text },
   summaryBox: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 15, zIndex: 2 },
+  personaTag: { fontSize: 9, color: theme.colors.primary, letterSpacing: 1, marginBottom: 5, fontWeight: 'bold' },
   summaryText: { fontSize: 13, color: theme.colors.text, lineHeight: 20, fontStyle: 'italic', opacity: 0.9 }
 });
