@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { VisualToken } from './VisualToken';
 
 const { width } = Dimensions.get('window');
 
@@ -10,11 +11,13 @@ export const PosterTemplate = ({ dream }) => {
 
   let emotion = '未解析';
   let tags = [];
+  let parsedData = null;
   try {
     const parsed = typeof dream?.analysis === 'string' ? JSON.parse(dream?.analysis) : dream?.analysis;
     if (parsed) {
       emotion = parsed.emotion || emotion;
       tags = parsed.keywords || [];
+      parsedData = parsed;
     }
   } catch (e) {
     console.warn('AI 數據解析失敗', e);
@@ -29,13 +32,17 @@ export const PosterTemplate = ({ dream }) => {
             <Text style={styles.emotionText}>{emotion}</Text>
           </View>
         </View>
-        <View style={styles.visualPlaceholder}>
-          <View style={styles.orb} />
+
+        <View style={styles.visualContainer}>
+          {parsedData ? <VisualToken visualData={parsedData} /> : <View style={styles.orb} />}
         </View>
+
         <View style={styles.divider} />
+
         <Text style={styles.content} numberOfLines={5}>
           {dream?.content || '（無夢境內容）'}
         </Text>
+
         <View style={styles.tagContainer}>
           {tags.map((tag, i) => (
             <View key={i} style={styles.tag}>
@@ -95,8 +102,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
-  visualPlaceholder: {
-    height: 100,
+  visualContainer: {
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 10,
