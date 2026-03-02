@@ -54,7 +54,7 @@ function App() {
     try {
       const result = await fetchAIVisual(text, config);
       if (!result.emotion) throw new Error('AI 解析無效');
-      await addDream(text, result.analysis, JSON.stringify(result));
+      await addDream(text, result.emotion, JSON.stringify(result));
       setText('');
     } catch (err) {
       console.error('封存出錯:', err);
