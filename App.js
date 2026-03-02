@@ -53,7 +53,7 @@ function App() {
     setIsLoading(true);
     try {
       const result = await fetchAIVisual(text, config);
-      if (!result.analysis) throw new Error('AI 解析無效');
+      if (!result.emotion) throw new Error('AI 解析無效');
       await addDream(text, result.analysis, JSON.stringify(result));
       setText('');
     } catch (err) {
